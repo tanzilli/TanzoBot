@@ -108,7 +108,7 @@ def error(bot, update, error):
 
 def main():
 	# Creata l'EventHandler e gli passa il token assegnato al bot
-	#	updater = telegram.Updater("Inserisci qui il Token assegnato da BotFather")
+	# Cambia questo Token con quello che ti ha assegnato BotFather
 	updater = telegram.Updater("174561804:AAHk6_M9j0Kkfka_k8GtXuP3ZLXgTpHjp6Q")
 
 	# Get the dispatcher to register handlers
