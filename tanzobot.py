@@ -17,6 +17,7 @@ help_text= (
 			"/webcam Scatta una foto da webcam\n"
 			"/webimage Immagine presa da web\n"
 			"/pdf Invia un PDF memorizzato su microSD\n"
+			"/mp3 Invia un MP3 memorizzato su microSD\n"
 			)
 			
 GPIO.setmode(GPIO.BCM)
@@ -66,6 +67,9 @@ def send_webimage(bot, update):
 def send_pdf(bot, update):
 	bot.sendDocument(update.message.chat_id, open('acme.pdf'))
 
+def send_mp3(bot, update):
+	bot.sendAudio(update.message.chat_id, open('idilio.mp3'))
+
 def send_stop(bot, update):	
 	reply_markup = telegram.ReplyKeyboardHide()
 	bot.sendMessage(update.message.chat_id, text="Bye", reply_markup=reply_markup)
@@ -109,7 +113,7 @@ def error(bot, update, error):
 def main():
 	# Creata l'EventHandler e gli passa il token assegnato al bot
 	# Cambia questo Token con quello che ti ha assegnato BotFather
-	updater = telegram.Updater("174561804:AAHk6_M9j0Kkfka_k8GtXuP3ZLXgTpHjp6Q")
+	updater = telegram.Updater("Inserire il Token assegnato da BotFather qui")
 
 	# Get the dispatcher to register handlers
 	dp = updater.dispatcher
@@ -121,6 +125,7 @@ def main():
 	dp.addTelegramCommandHandler("webcam", send_foto_da_webcam)
 	dp.addTelegramCommandHandler("webimage", send_webimage)
 	dp.addTelegramCommandHandler("pdf", send_pdf)
+	dp.addTelegramCommandHandler("mp3", send_mp3)
 	dp.addTelegramCommandHandler("stop", send_stop)
 
 	# on noncommand i.e message - echo the message on Telegram
