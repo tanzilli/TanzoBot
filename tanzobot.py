@@ -8,30 +8,28 @@ import RPi.GPIO as GPIO
 import time
 import os
 
+emoji = telegram.Emoji
+
 help_text= (
-			"Comandi disponibili:\n"
-			"/rele Attuazione rele\n"
+			"Benvenuto ! Io sono @TanzoBot..." + emoji.SMILING_FACE_WITH_SUNGLASSES + "\n"
+			"Menu dei comandi disponibili:\n"
+			"/luci Attuazione rele\n"
 			"/webcam Scatta una foto da webcam\n"
-			"/webimage Prende una immagine da web e la invia\n"
+			"/webimage Immagine presa da web\n"
 			"/pdf Invia un PDF memorizzato su microSD\n"
-			"\n"
-			"Per info http://www.acmesystems.it/tpc\n"
 			)
 			
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-LED=4
-RELE1=17
-RELE2=27
+LAMP_DX=17
+LAMP_SX=27
 
-GPIO.setup(LED, GPIO.OUT)
-GPIO.setup(RELE1, GPIO.OUT)
-GPIO.setup(RELE2, GPIO.OUT)
+GPIO.setup(LAMP_SX, GPIO.OUT)
+GPIO.setup(LAMP_DX, GPIO.OUT)
 
-GPIO.output(LED, 0)
-GPIO.output(RELE1, 0)
-GPIO.output(RELE2, 0)
+GPIO.output(LAMP_SX, 0)
+GPIO.output(LAMP_DX, 0)
 
 # Enable logging
 logging.basicConfig(
@@ -39,17 +37,16 @@ logging.basicConfig(
 		level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-emoji = telegram.Emoji
+
 
 def start(bot, update):
-	bot.sendMessage(update.message.chat_id, text='Benvenuto. Io sono @TanzoBot !' + emoji.SMILING_FACE_WITH_SUNGLASSES)
 	bot.sendMessage(update.message.chat_id, text=help_text)
 
 def help(bot, update):
 	bot.sendMessage(update.message.chat_id, text=help_text)
 
-def send_comandi_rele(bot, update):	
-	custom_keyboard = [['RELE 1'],['RELE 2'],[ 'Led ON', 'Led OFF' ], ['Fatto']]
+def send_luci(bot, update):	
+	custom_keyboard = [[ 'LAMP SX ON', 'LAMP DX ON' ],[ 'LAMP SX OFF', 'LAMP DX OFF' ], ['/webcam'],  ['OK']]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	reply_markup.one_time_keyboard=False
 	reply_markup.resize_keyboard=True
@@ -57,7 +54,7 @@ def send_comandi_rele(bot, update):
 
 
 def send_foto_da_webcam(bot, update):	
-	custom_keyboard = [['CAMERA 1'],['CAMERA 2'],[ 'Fatto' ]]
+	custom_keyboard = [['CAMERA 1','CAMERA 2','CAMERA 3'],['/luci'],[ 'OK' ]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	reply_markup.one_time_keyboard=False
 	reply_markup.resize_keyboard=True
@@ -78,41 +75,31 @@ def echo(bot, update):
 	print "----> Mittente: : [" + update.message.from_user.username + "]"
 	print "      Testo     : [" + update.message.text + "]"
 	
-	if update.message.text=="RELE 1":
-		print "Rele 1 acceso per 1 sec"
-		bot.sendMessage(update.message.chat_id, "Rele 1 acceso per 1 sec")
-		GPIO.output(RELE1, 1)
-		time.sleep(1)
-		GPIO.output(RELE1, 0)
+	if update.message.text=="LAMP SX ON":
+		GPIO.output(LAMP_SX, 1)
 
-	if update.message.text=="RELE 2":
-		print "Rele 2 acceso per 1 sec"
-		bot.sendMessage(update.message.chat_id, "Rele 2 acceso per 1 sec")
-		GPIO.output(RELE2, 1)
-		time.sleep(1)
-		GPIO.output(RELE2, 0)
+	if update.message.text=="LAMP SX OFF":
+		GPIO.output(LAMP_SX, 0)
 
-	if update.message.text=="Led ON":
-		print "Led acceso"
-		bot.sendMessage(update.message.chat_id, "Led acceso")
-		GPIO.output(LED, 1)
+	if update.message.text=="LAMP DX ON":
+		GPIO.output(LAMP_DX, 1)
 
-	if update.message.text=="Led OFF":
-		print "Led spento"
-		bot.sendMessage(update.message.chat_id, "Led spento")
-		GPIO.output(LED, 0)
+	if update.message.text=="LAMP DX OFF":
+		GPIO.output(LAMP_DX, 0)
 
 	if update.message.text=="CAMERA 1":
-		bot.sendMessage(update.message.chat_id, text='Ricezione foto da camera 1...')
-		os.system("fswebcam -d /dev/video0 -r 1280x720 photo1.jpg")
-		bot.sendPhoto(update.message.chat_id, photo=open('photo1.jpg'))
+		os.system("fswebcam -d /dev/video0 -r 640x360 photo0.jpg")
+		bot.sendPhoto(update.message.chat_id, photo=open('photo0.jpg'))
 
 	if update.message.text=="CAMERA 2":
-		bot.sendMessage(update.message.chat_id, text='Ricezione foto da camera 2...')
-		os.system("fswebcam -d /dev/video1 -r 1280x720 photo2.jpg")
+		os.system("fswebcam -d /dev/video1 -r 640x360 photo1.jpg")
+		bot.sendPhoto(update.message.chat_id, photo=open('photo1.jpg'))
+
+	if update.message.text=="CAMERA 3":
+		os.system("fswebcam -d /dev/video2 -r 640x360 photo2.jpg")
 		bot.sendPhoto(update.message.chat_id, photo=open('photo2.jpg'))
 
-	if update.message.text=="Fatto":
+	if update.message.text=="OK":
 		reply_markup = telegram.ReplyKeyboardHide()
 		bot.sendMessage(update.message.chat_id, text="Ok", reply_markup=reply_markup)
 		
@@ -121,7 +108,8 @@ def error(bot, update, error):
 
 def main():
 	# Creata l'EventHandler e gli passa il token assegnato al bot
-	updater = telegram.Updater("Inserisci qui il Token assegnato da BotFather")
+	#	updater = telegram.Updater("Inserisci qui il Token assegnato da BotFather")
+	updater = telegram.Updater("174561804:AAHk6_M9j0Kkfka_k8GtXuP3ZLXgTpHjp6Q")
 
 	# Get the dispatcher to register handlers
 	dp = updater.dispatcher
@@ -129,7 +117,7 @@ def main():
 	# Definisce gli handler di gestione dei comandi
 	dp.addTelegramCommandHandler("start", start)
 	dp.addTelegramCommandHandler("help", help)
-	dp.addTelegramCommandHandler("rele", send_comandi_rele)
+	dp.addTelegramCommandHandler("luci", send_luci)
 	dp.addTelegramCommandHandler("webcam", send_foto_da_webcam)
 	dp.addTelegramCommandHandler("webimage", send_webimage)
 	dp.addTelegramCommandHandler("pdf", send_pdf)
