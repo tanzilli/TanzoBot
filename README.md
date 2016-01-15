@@ -1,6 +1,6 @@
 #Telegram Physical Computing
 
-Programmi di esempio
+Info su http://www.acmesystems.it/tpc
 
 2016 (c) Sergio Tanzilli
 
