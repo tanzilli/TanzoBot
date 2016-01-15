@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#http://www.acmesystems.it/tpc
 
 import telegram
 import logging
@@ -9,12 +10,14 @@ import os
 
 help_text= (
 			"Comandi disponibili:\n"
-			"/comandi Tastiera comandi\n"
-			"/foto Scatta una Foto\n"
-			"/volantino Pdf della nuova brochure NoiNet\n"
-			"/logo Logo NoiNet\n"
+			"/rele Attuazione rele\n"
+			"/webcam Scatta una foto da webcam\n"
+			"/webimage Prende una immagine da web e la invia\n"
+			"/pdf Invia un PDF memorizzato su microSD\n"
+			"\n"
+			"Per info http://www.acmesystems.it/tpc\n"
 			)
-
+			
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -36,34 +39,35 @@ logging.basicConfig(
 		level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-#emoji = telegram.Emoji
+emoji = telegram.Emoji
 
 def start(bot, update):
-	bot.sendMessage(update.message.chat_id, text='Benvenuto. Io sono @TanzoBot ' + telegram.Emoji.SMILING_FACE_WITH_SUNGLASSES)
+	bot.sendMessage(update.message.chat_id, text='Benvenuto. Io sono @TanzoBot !' + emoji.SMILING_FACE_WITH_SUNGLASSES)
 	bot.sendMessage(update.message.chat_id, text=help_text)
 
 def help(bot, update):
 	bot.sendMessage(update.message.chat_id, text=help_text)
 
-def send_logo_noinet(bot, update):
-	bot.sendPhoto(update.message.chat_id, photo='http://www.noinet.eu/wp-content/uploads/2013/06/Noinet_pubblicita-300x210.jpg')
-
-def send_volantino_noinet(bot, update):
-	bot.sendDocument(update.message.chat_id, open('noinet.pdf'))
-
-def send_comandi(bot, update):	
+def send_comandi_rele(bot, update):	
 	custom_keyboard = [['RELE 1'],['RELE 2'],[ 'Led ON', 'Led OFF' ], ['Fatto']]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	reply_markup.one_time_keyboard=False
 	reply_markup.resize_keyboard=True
 	bot.sendMessage(update.message.chat_id, text="Seleziona il comando", reply_markup=reply_markup)
 
-def send_foto(bot, update):	
+
+def send_foto_da_webcam(bot, update):	
 	custom_keyboard = [['CAMERA 1'],['CAMERA 2'],[ 'Fatto' ]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	reply_markup.one_time_keyboard=False
 	reply_markup.resize_keyboard=True
-	bot.sendMessage(update.message.chat_id, text="Seleziona la webcam", reply_markup=reply_markup)
+	bot.sendMessage(update.message.chat_id, text="Seleziona la camera", reply_markup=reply_markup)
+
+def send_webimage(bot, update):
+	bot.sendPhoto(update.message.chat_id, photo='http://www.acmesystems.it/www/tpc/telegram_bulb.jpg')
+
+def send_pdf(bot, update):
+	bot.sendDocument(update.message.chat_id, open('acme.pdf'))
 
 def send_stop(bot, update):	
 	reply_markup = telegram.ReplyKeyboardHide()
@@ -71,22 +75,31 @@ def send_stop(bot, update):
 
 def echo(bot, update):
 	
-	print "Messaggio dallo user " + update.message.from_user.username
+	print "----> Mittente: : [" + update.message.from_user.username + "]"
+	print "      Testo     : [" + update.message.text + "]"
 	
 	if update.message.text=="RELE 1":
+		print "Rele 1 acceso per 1 sec"
+		bot.sendMessage(update.message.chat_id, "Rele 1 acceso per 1 sec")
 		GPIO.output(RELE1, 1)
 		time.sleep(1)
 		GPIO.output(RELE1, 0)
 
 	if update.message.text=="RELE 2":
+		print "Rele 2 acceso per 1 sec"
+		bot.sendMessage(update.message.chat_id, "Rele 2 acceso per 1 sec")
 		GPIO.output(RELE2, 1)
 		time.sleep(1)
 		GPIO.output(RELE2, 0)
 
 	if update.message.text=="Led ON":
+		print "Led acceso"
+		bot.sendMessage(update.message.chat_id, "Led acceso")
 		GPIO.output(LED, 1)
 
 	if update.message.text=="Led OFF":
+		print "Led spento"
+		bot.sendMessage(update.message.chat_id, "Led spento")
 		GPIO.output(LED, 0)
 
 	if update.message.text=="CAMERA 1":
@@ -102,29 +115,24 @@ def echo(bot, update):
 	if update.message.text=="Fatto":
 		reply_markup = telegram.ReplyKeyboardHide()
 		bot.sendMessage(update.message.chat_id, text="Ok", reply_markup=reply_markup)
-
-
 		
-	bot.sendMessage(update.message.chat_id, text=update.message.text)
-
-
 def error(bot, update, error):
 	logger.warn('Update "%s" caused error "%s"' % (update, error))
 
 def main():
-	# Create the EventHandler and pass it your bot's token.
+	# Creata l'EventHandler e gli passa il token assegnato al bot
 	updater = telegram.Updater("Inserisci qui il Token assegnato da BotFather")
 
 	# Get the dispatcher to register handlers
 	dp = updater.dispatcher
 
-	# on different commands - answer in Telegram
+	# Definisce gli handler di gestione dei comandi
 	dp.addTelegramCommandHandler("start", start)
 	dp.addTelegramCommandHandler("help", help)
-	dp.addTelegramCommandHandler("comandi", send_comandi)
-	dp.addTelegramCommandHandler("foto", send_foto)
-	dp.addTelegramCommandHandler("logo", send_logo_noinet)
-	dp.addTelegramCommandHandler("volantino", send_volantino_noinet)
+	dp.addTelegramCommandHandler("rele", send_comandi_rele)
+	dp.addTelegramCommandHandler("webcam", send_foto_da_webcam)
+	dp.addTelegramCommandHandler("webimage", send_webimage)
+	dp.addTelegramCommandHandler("pdf", send_pdf)
 	dp.addTelegramCommandHandler("stop", send_stop)
 
 	# on noncommand i.e message - echo the message on Telegram
