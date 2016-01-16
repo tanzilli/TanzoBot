@@ -13,11 +13,14 @@ emoji = telegram.Emoji
 help_text= (
 			"Benvenuto ! Io sono @TanzoBot..." + emoji.SMILING_FACE_WITH_SUNGLASSES + "\n"
 			"Menu dei comandi disponibili:\n"
+			"/help Elenco comandi\n"
 			"/luci Attuazione rele\n"
 			"/webcam Scatta una foto da webcam\n"
 			"/webimage Immagine presa da web\n"
 			"/pdf Invia un PDF memorizzato su microSD\n"
 			"/mp3 Invia un MP3 memorizzato su microSD\n"
+			"/dog Riproduce il ringhio di un cane sugli speaker\n" 
+			"/mute Blocca omxplayer\n"
 			)
 			
 GPIO.setmode(GPIO.BCM)
@@ -70,6 +73,12 @@ def send_pdf(bot, update):
 def send_mp3(bot, update):
 	bot.sendAudio(update.message.chat_id, open('idilio.mp3'))
 
+def send_dog(bot, update):
+	os.system("omxplayer -o local angrydog.m4a &")
+
+def send_mute(bot, update):
+	os.system("pkill omxplayer")
+
 def send_stop(bot, update):	
 	reply_markup = telegram.ReplyKeyboardHide()
 	bot.sendMessage(update.message.chat_id, text="Bye", reply_markup=reply_markup)
@@ -79,33 +88,55 @@ def echo(bot, update):
 	print "----> Mittente: : [" + update.message.from_user.username + "]"
 	print "      Testo     : [" + update.message.text + "]"
 	
-	if update.message.text=="LAMP SX ON":
-		GPIO.output(LAMP_SX, 1)
+	print update.message
+	
+	if update.message.voice:
+		print " ----> VOCE <----"
+		#bot.sendVoice(update.message.chat_id, update.message.voice.file_id)
+		#https://github.com/python-telegram-bot/python-telegram-bot#api
+		newFile = bot.getFile(update.message.voice.file_id)
+		newFile.download('voice')
+		os.system("omxplayer -o local voice &")
 
-	if update.message.text=="LAMP SX OFF":
-		GPIO.output(LAMP_SX, 0)
+	if update.message.audio:
+		print " ----> AUDIO <----"
+		#bot.sendVoice(update.message.chat_id, update.message.voice.file_id)
+		#https://github.com/python-telegram-bot/python-telegram-bot#api
+		newFile = bot.getFile(update.message.audio.file_id)
+		newFile.download('audio')
+		os.system("omxplayer -o local audio &")
+		
+	if update.message.sticker:
+		print " ----> STICKER <----"
 
-	if update.message.text=="LAMP DX ON":
-		GPIO.output(LAMP_DX, 1)
+	if update.message.text:
+		if update.message.text=="LAMP SX ON":
+			GPIO.output(LAMP_SX, 1)
 
-	if update.message.text=="LAMP DX OFF":
-		GPIO.output(LAMP_DX, 0)
+		if update.message.text=="LAMP SX OFF":
+			GPIO.output(LAMP_SX, 0)
 
-	if update.message.text=="CAMERA 1":
-		os.system("fswebcam -d /dev/video0 -r 640x360 photo0.jpg")
-		bot.sendPhoto(update.message.chat_id, photo=open('photo0.jpg'))
+		if update.message.text=="LAMP DX ON":
+			GPIO.output(LAMP_DX, 1)
 
-	if update.message.text=="CAMERA 2":
-		os.system("fswebcam -d /dev/video1 -r 640x360 photo1.jpg")
-		bot.sendPhoto(update.message.chat_id, photo=open('photo1.jpg'))
+		if update.message.text=="LAMP DX OFF":
+			GPIO.output(LAMP_DX, 0)
 
-	if update.message.text=="CAMERA 3":
-		os.system("fswebcam -d /dev/video2 -r 640x360 photo2.jpg")
-		bot.sendPhoto(update.message.chat_id, photo=open('photo2.jpg'))
+		if update.message.text=="CAMERA 1":
+			os.system("fswebcam -d /dev/video0 -r 640x360 photo0.jpg")
+			bot.sendPhoto(update.message.chat_id, photo=open('photo0.jpg'))
 
-	if update.message.text=="OK":
-		reply_markup = telegram.ReplyKeyboardHide()
-		bot.sendMessage(update.message.chat_id, text="Ok", reply_markup=reply_markup)
+		if update.message.text=="CAMERA 2":
+			os.system("fswebcam -d /dev/video1 -r 640x360 photo1.jpg")
+			bot.sendPhoto(update.message.chat_id, photo=open('photo1.jpg'))
+
+		if update.message.text=="CAMERA 3":
+			os.system("fswebcam -d /dev/video2 -r 640x360 photo2.jpg")
+			bot.sendPhoto(update.message.chat_id, photo=open('photo2.jpg'))
+
+		if update.message.text=="OK":
+			reply_markup = telegram.ReplyKeyboardHide()
+			bot.sendMessage(update.message.chat_id, text="Ok", reply_markup=reply_markup)
 		
 def error(bot, update, error):
 	logger.warn('Update "%s" caused error "%s"' % (update, error))
@@ -113,7 +144,8 @@ def error(bot, update, error):
 def main():
 	# Creata l'EventHandler e gli passa il token assegnato al bot
 	# Cambia questo Token con quello che ti ha assegnato BotFather
-	updater = telegram.Updater("Inserire il Token assegnato da BotFather qui")
+	
+	updater = telegram.Updater("Inserisci qui il Token assegnato da BotFather")	
 
 	# Get the dispatcher to register handlers
 	dp = updater.dispatcher
@@ -126,6 +158,8 @@ def main():
 	dp.addTelegramCommandHandler("webimage", send_webimage)
 	dp.addTelegramCommandHandler("pdf", send_pdf)
 	dp.addTelegramCommandHandler("mp3", send_mp3)
+	dp.addTelegramCommandHandler("dog", send_dog)
+	dp.addTelegramCommandHandler("mute", send_mute)
 	dp.addTelegramCommandHandler("stop", send_stop)
 
 	# on noncommand i.e message - echo the message on Telegram
