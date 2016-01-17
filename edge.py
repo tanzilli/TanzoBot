@@ -2,22 +2,33 @@
 
 import RPi.GPIO as GPIO
 import time
+
+LAMP_DX=17
+LAMP_SX=27
+INT_SX=21
 	
 def my_callback(channel):
 	print channel
-	print GPIO.input(channel)
-
-def main():
-	try:  
-		GPIO.setmode(GPIO.BCM)
-		GPIO.setwarnings(False)
-		GPIO.cleanup()
-
-		GPIO.setup(21, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-		time.sleep(0.1)
+	if channel==INT_SX:
+		if GPIO.input(LAMP_SX)==0:
+			GPIO.output(LAMP_SX, 1)
+		else:
+			GPIO.output(LAMP_SX, 0)
 		
-		GPIO.remove_event_detect(21) 
-		GPIO.add_event_detect(21, GPIO.BOTH, callback=my_callback, bouncetime=100)
+def main():
+
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setwarnings(False)
+
+	GPIO.setup(INT_SX, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+	GPIO.add_event_detect(INT_SX, GPIO.BOTH, callback=my_callback, bouncetime=100)
+
+	GPIO.setup(LAMP_SX, GPIO.OUT)
+	GPIO.setup(LAMP_DX, GPIO.OUT)
+	GPIO.output(LAMP_SX, 0)
+	GPIO.output(LAMP_DX, 0)
+		
+	try:  
 		
 		#Entro in un loop infinito dove conto i secondi che passano
 		while True:
