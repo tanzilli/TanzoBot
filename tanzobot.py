@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #http://www.acmesystems.it/tpc
-
+ 
 #Inserire nel file mytokens.py il token assegnato da BotFather
 import mytokens
 
@@ -10,6 +10,8 @@ import logging
 import RPi.GPIO as GPIO
 import time
 import os
+
+import picamera
 
 # We use this var to save the last chat id, so we can reply to it
 last_chat_id = 0
@@ -28,14 +30,6 @@ menu_keyboard.resize_keyboard=True
 rele_keyboard = telegram.ReplyKeyboardMarkup([[ 'REL1 ON', 'REL2 ON' ],[ 'REL1 OFF', 'REL2 OFF' ], ['/menu']])
 rele_keyboard.one_time_keyboard=False
 rele_keyboard.resize_keyboard=True
-
-foto_keyboard = telegram.ReplyKeyboardMarkup([['CAMERA 1','CAMERA 2','CAMERA 3'],['/menu' ]])
-foto_keyboard.one_time_keyboard=False
-foto_keyboard.resize_keyboard=True
-
-video_keyboard = telegram.ReplyKeyboardMarkup([['VCAMERA 1','VCAMERA 2','VCAMERA 3'],['/menu' ]])
-video_keyboard.one_time_keyboard=False
-video_keyboard.resize_keyboard=True
 	
 # Enable logging
 logging.basicConfig(
@@ -52,11 +46,8 @@ def switch_handler(channel):
 
 def pir_handler(channel):
 	global update_queue
-	
 	print "PIR alarm"
 	update_queue.put("pir_alarm");
-	#os.system("fswebcam -d /dev/video0 -r 320x240 photo0.jpg")
-	#bot.sendPhoto(update.message.chat_id, photo=open('photo0.jpg'))
 
 def start(bot, update):
 	bot.sendMessage(update.message.chat_id, welcome_text)	
@@ -68,12 +59,28 @@ def menu(bot, update):
 def send_menu_rele(bot, update):	
 	bot.sendMessage(update.message.chat_id, text="Seleziona il comando", reply_markup=rele_keyboard)
 
-def send_menu_foto(bot, update):	
-	bot.sendMessage(update.message.chat_id, text="Seleziona la camera", reply_markup=foto_keyboard)
+#http://picamera.readthedocs.org/en/release-1.10/quickstart.html
+def send_video(bot, update):		
+	#os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video2.mp4")
+	bot.sendMessage(update.message.chat_id, "Video in corso...")
+	with picamera.PiCamera() as camera:
+		camera.resolution = (320,240)
+		camera.start_recording('video.h264')
+		camera.wait_recording(5)
+		camera.stop_recording()
 
-def send_menu_video(bot, update):	
-	bot.sendMessage(update.message.chat_id,"Non ancora implementato, pardon ... !")
-	#bot.sendMessage(update.message.chat_id, text="Seleziona la camera", reply_markup=video_keyboard)
+	os.system("rm video.mp4")	
+	os.system("MP4Box -add video.h264 video.mp4")
+	bot.sendVideo(update.message.chat_id, video=open('video.mp4'))
+
+#http://picamera.readthedocs.org/en/release-1.10/quickstart.html
+def send_foto(bot, update):
+	bot.sendMessage(update.message.chat_id, "Foto in corso...")
+	with picamera.PiCamera() as camera:
+		camera.resolution = (1280,720)
+		camera.capture('photo.jpg')
+
+	bot.sendPhoto(update.message.chat_id, photo=open('photo.jpg'))
 
 def send_logo(bot, update):
 	bot.sendPhoto(update.message.chat_id, photo='http://www.acmesystems.it/www/tpc/telegram_bulb.jpg')
@@ -164,30 +171,6 @@ def echo(bot, update):
 		if update.message.text=="REL2 OFF":
 			GPIO.output(REL2, 0)
 
-		if update.message.text=="CAMERA 1":
-			os.system("fswebcam -d /dev/video0 -r 320x240 photo0.jpg")
-			bot.sendPhoto(update.message.chat_id, photo=open('photo0.jpg'))
-
-		if update.message.text=="CAMERA 2":
-			os.system("fswebcam -d /dev/video1 -r 320x240 photo1.jpg")
-			bot.sendPhoto(update.message.chat_id, photo=open('photo1.jpg'))
-
-		if update.message.text=="CAMERA 3":
-			os.system("fswebcam -d /dev/video2 -r 320x240 photo2.jpg")
-			bot.sendPhoto(update.message.chat_id, photo=open('photo2.jpg'))
-
-		if update.message.text=="VCAMERA 1":
-			os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video0.mp4")
-			bot.sendVideo(update.message.chat_id, video=open('video0.mp4'))
-
-		if update.message.text=="VCAMERA 2":
-			os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video1.mp4")
-			bot.sendVideo(update.message.chat_id, video=open('video1.mp4'))
-
-		if update.message.text=="VCAMERA 2":
-			os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video2.mp4")
-			bot.sendVideo(update.message.chat_id, video=open('video2.mp4'))
-
 		if update.message.text=="OK":
 			reply_markup = telegram.ReplyKeyboardHide()
 			bot.sendMessage(update.message.chat_id, text="Ok", reply_markup=reply_markup)
@@ -212,13 +195,13 @@ def main():
 	dp.addTelegramCommandHandler("menu", menu)
 	dp.addTelegramCommandHandler("help", menu)
 	dp.addTelegramCommandHandler("rele", send_menu_rele)
-	dp.addTelegramCommandHandler("foto", send_menu_foto)
-	dp.addTelegramCommandHandler("video", send_menu_video)
+	dp.addTelegramCommandHandler("foto", send_foto)
+	dp.addTelegramCommandHandler("video", send_video)
 	dp.addTelegramCommandHandler("logo", send_logo)
 	dp.addTelegramCommandHandler("pdf", send_pdf)
 	dp.addTelegramCommandHandler("music", send_music)
-	dp.addTelegramCommandHandler("dog", send_dog)
-	dp.addTelegramCommandHandler("jingle", send_jingle)
+	#dp.addTelegramCommandHandler("dog", send_dog)
+	#dp.addTelegramCommandHandler("jingle", send_jingle)
 	dp.addTelegramCommandHandler("mute", send_mute)
 	dp.addTelegramCommandHandler("stop", send_stop)
 	
@@ -226,8 +209,7 @@ def main():
 	dp.addTelegramRegexHandler('.*', any_message)
 
 	dp.addStringCommandHandler('pir_alarm', send_pir_alarm)
-	
-	
+		
 	# on noncommand i.e message - echo the message on Telegram
 	dp.addTelegramMessageHandler(echo)
 
