@@ -63,10 +63,12 @@ def send_menu_rele(bot, update):
 def send_video(bot, update):		
 	#os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video2.mp4")
 	bot.sendMessage(update.message.chat_id, "Video in corso...")
+	os.system("omxplayer -o local movie_camera_sound.mp3 &")
+	time.sleep(3.7)
 	with picamera.PiCamera() as camera:
 		camera.resolution = (320,240)
 		camera.start_recording('video.h264')
-		camera.wait_recording(5)
+		camera.wait_recording(4)
 		camera.stop_recording()
 
 	os.system("rm video.mp4")	
@@ -76,6 +78,8 @@ def send_video(bot, update):
 #http://picamera.readthedocs.org/en/release-1.10/quickstart.html
 def send_foto(bot, update):
 	bot.sendMessage(update.message.chat_id, "Foto in corso...")
+	os.system("omxplayer -o local saycheese.mp3 &")
+	time.sleep(2.5)
 	with picamera.PiCamera() as camera:
 		camera.resolution = (1280,720)
 		camera.capture('photo.jpg')
@@ -200,8 +204,8 @@ def main():
 	dp.addTelegramCommandHandler("logo", send_logo)
 	dp.addTelegramCommandHandler("pdf", send_pdf)
 	dp.addTelegramCommandHandler("music", send_music)
-	#dp.addTelegramCommandHandler("dog", send_dog)
-	#dp.addTelegramCommandHandler("jingle", send_jingle)
+	dp.addTelegramCommandHandler("dog", send_dog)
+	dp.addTelegramCommandHandler("jingle", send_jingle)
 	dp.addTelegramCommandHandler("mute", send_mute)
 	dp.addTelegramCommandHandler("stop", send_stop)
 	
