@@ -10,6 +10,7 @@ import logging
 import RPi.GPIO as GPIO
 import time
 import os
+import pygal
 
 import picamera
 
@@ -17,19 +18,25 @@ import picamera
 last_chat_id = 0
 
 voice_file_counter=0
-
-emoji = telegram.Emoji
 update_queue = 0
 
-welcome_text = 	"Benvenuto ! Io sono @TanzoBot v 1.3" + emoji.SMILING_FACE_WITH_SUNGLASSES + "\n" 
-
-menu_keyboard = telegram.ReplyKeyboardMarkup([['/rele','/foto','/video','/logo','/start'],['/dog','/music','/jingle','/pdf'],['/mute','/menu']])
+menu_keyboard = telegram.ReplyKeyboardMarkup([['/rele','/foto','/video','/logo','/start'],['/dog','/music','/jingle','/pdf','/graph'],['/mute','/menu']])
 menu_keyboard.one_time_keyboard=False
 menu_keyboard.resize_keyboard=True
 
 rele_keyboard = telegram.ReplyKeyboardMarkup([[ 'REL1 ON', 'REL2 ON' ],[ 'REL1 OFF', 'REL2 OFF' ], ['/menu']])
 rele_keyboard.one_time_keyboard=False
 rele_keyboard.resize_keyboard=True
+
+rele_counter=0
+foto_counter=0
+video_counter=0
+logo_counter=0
+pdf_counter=0
+music_counter=0
+dog_counter=0
+jingle_counter=0
+graph_counter=0
 	
 # Enable logging
 logging.basicConfig(
@@ -50,17 +57,86 @@ def pir_handler(channel):
 	update_queue.put("pir_alarm");
 
 def start(bot, update):
-	bot.sendMessage(update.message.chat_id, welcome_text)	
+	bot.sendMessage(update.message.chat_id, "Ciao %s ! Io sono TanzoBot.\n" % ( update.message.from_user.first_name))
 	menu(bot,update)
 
 def menu(bot, update):
 	bot.sendMessage(update.message.chat_id, text="Seleziona un comando", reply_markup=menu_keyboard)
 
 def send_menu_rele(bot, update):	
+	update_counter("rele")
 	bot.sendMessage(update.message.chat_id, text="Seleziona il comando", reply_markup=rele_keyboard)
+
+def update_counter(counter_name):
+	global rele_counter
+	global foto_counter
+	global video_counter
+	global logo_counter
+	global pdf_counter
+	global music_counter
+	global dog_counter
+	global jingle_counter
+	global graph_counter
+
+	if counter_name=="rele":
+		rele_counter=rele_counter+1
+	if counter_name=="foto":
+		foto_counter=foto_counter+1
+	if counter_name=="video":
+		video_counter=video_counter+1
+	if counter_name=="logo":
+		logo_counter=logo_counter+1
+	if counter_name=="pdf":
+		pdf_counter=pdf_counter+1
+	if counter_name=="music":
+		music_counter=music_counter+1
+	if counter_name=="dog":
+		dog_counter=dog_counter+1
+	if counter_name=="jingle":
+		jingle_counter=jingle_counter+1
+	if counter_name=="graph":
+		graph_counter=graph_counter+1
+
+#sudo apt-get install python-pip
+#sudo pip install pygal
+#sudo pip install tinycss
+#sudo apt-get install python-cairosvg
+#sudo apt-get install python-lxml
+#sudo apt-get install python-cssselect
+		
+def graph_generator():
+	global rele_counter
+	global foto_counter
+	global video_counter
+	global logo_counter
+	global pdf_counter
+	global music_counter
+	global dog_counter
+	global jingle_counter
+	global graph_counter
+	
+	line_chart = pygal.HorizontalBar()
+	line_chart.title = 'Comandi TanzoBot usati dalle %s ore %s' % (time.strftime("%d/%m/%Y"),time.strftime("%H:%M:%S"))
+	line_chart.add('rele', rele_counter)
+	line_chart.add('foto', foto_counter)
+	line_chart.add('video', video_counter)
+	line_chart.add('logo', logo_counter)
+	line_chart.add('pdf', pdf_counter)
+	line_chart.add('music', music_counter)
+	line_chart.add('dog', dog_counter)
+	line_chart.add('jingle', jingle_counter)
+	line_chart.add('graph', jingle_counter)
+	line_chart.render_to_png('bar_chart.png')
+
+def send_graph(bot, update):
+	update_counter("graph")	
+	graph_generator()
+	bot.sendPhoto(update.message.chat_id,open('bar_chart.png'))
 
 #http://picamera.readthedocs.org/en/release-1.10/quickstart.html
 def send_video(bot, update):		
+	update_counter("video")
+		
 	#os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video2.mp4")
 	bot.sendMessage(update.message.chat_id, "Video in corso...")
 	os.system("omxplayer -o local movie_camera_sound.mp3 &")
@@ -77,6 +153,8 @@ def send_video(bot, update):
 
 #http://picamera.readthedocs.org/en/release-1.10/quickstart.html
 def send_foto(bot, update):
+	update_counter("foto")
+	
 	bot.sendMessage(update.message.chat_id, "Foto in corso...")
 	os.system("omxplayer -o local saycheese.mp3 &")
 	time.sleep(2.5)
@@ -87,18 +165,23 @@ def send_foto(bot, update):
 	bot.sendPhoto(update.message.chat_id, photo=open('photo.jpg'))
 
 def send_logo(bot, update):
+	update_counter("logo")
 	bot.sendPhoto(update.message.chat_id, photo='http://www.acmesystems.it/www/tpc/telegram_bulb.jpg')
 
 def send_pdf(bot, update):
+	update_counter("pdf")
 	bot.sendDocument(update.message.chat_id, open('acme.pdf'))
 
 def send_music(bot, update):
+	update_counter("music")
 	bot.sendAudio(update.message.chat_id, open("thats_all_folks.m4a"))
 
 def send_dog(bot, update):
+	update_counter("dog")
 	os.system("omxplayer -o local angrydog.m4a &")
 
 def send_jingle(bot, update):
+	update_counter("jingle")
 	os.system("omxplayer -o local thats_all_folks.m4a &")
 
 def send_mute(bot, update):
@@ -206,6 +289,7 @@ def main():
 	dp.addTelegramCommandHandler("music", send_music)
 	dp.addTelegramCommandHandler("dog", send_dog)
 	dp.addTelegramCommandHandler("jingle", send_jingle)
+	dp.addTelegramCommandHandler("graph", send_graph)
 	dp.addTelegramCommandHandler("mute", send_mute)
 	dp.addTelegramCommandHandler("stop", send_stop)
 	
