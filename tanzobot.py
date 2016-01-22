@@ -28,15 +28,10 @@ rele_keyboard = telegram.ReplyKeyboardMarkup([[ 'REL1 ON', 'REL2 ON' ],[ 'REL1 O
 rele_keyboard.one_time_keyboard=False
 rele_keyboard.resize_keyboard=True
 
-rele_counter=0
-foto_counter=0
-video_counter=0
-logo_counter=0
-pdf_counter=0
-music_counter=0
-dog_counter=0
-jingle_counter=0
-graph_counter=0
+comandi=["rele","foto","video","logo","pdf","music","dog","jingle","graph"]
+chiamate=[0,0,0,0,0,0,0,0,0]
+
+startup_time = "Comandi usati dalle %s ore %s" % (time.strftime("%d/%m/%Y"),time.strftime("%H:%M:%S"))
 	
 # Enable logging
 logging.basicConfig(
@@ -61,41 +56,14 @@ def start(bot, update):
 	menu(bot,update)
 
 def menu(bot, update):
-	bot.sendMessage(update.message.chat_id, text="Seleziona un comando", reply_markup=menu_keyboard)
+	bot.sendMessage(update.message.chat_id, text="Seleziona un comando dalla tastiera qui sotto oppure invia un messaggio vocale da riprodurre sulle casse di TanzoBot...", reply_markup=menu_keyboard)
 
 def send_menu_rele(bot, update):	
-	update_counter("rele")
-	bot.sendMessage(update.message.chat_id, text="Seleziona il comando", reply_markup=rele_keyboard)
-
-def update_counter(counter_name):
-	global rele_counter
-	global foto_counter
-	global video_counter
-	global logo_counter
-	global pdf_counter
-	global music_counter
-	global dog_counter
-	global jingle_counter
-	global graph_counter
-
-	if counter_name=="rele":
-		rele_counter=rele_counter+1
-	if counter_name=="foto":
-		foto_counter=foto_counter+1
-	if counter_name=="video":
-		video_counter=video_counter+1
-	if counter_name=="logo":
-		logo_counter=logo_counter+1
-	if counter_name=="pdf":
-		pdf_counter=pdf_counter+1
-	if counter_name=="music":
-		music_counter=music_counter+1
-	if counter_name=="dog":
-		dog_counter=dog_counter+1
-	if counter_name=="jingle":
-		jingle_counter=jingle_counter+1
-	if counter_name=="graph":
-		graph_counter=graph_counter+1
+	global comandi
+	global chiamate
+	
+	chiamate[comandi.index("rele")]+=1
+	bot.sendMessage(update.message.chat_id, text="Puoi accendere o spegnere entrambe i rele collegati a TanzoBot...", reply_markup=rele_keyboard)
 
 #sudo apt-get install python-pip
 #sudo pip install pygal
@@ -104,41 +72,37 @@ def update_counter(counter_name):
 #sudo apt-get install python-lxml
 #sudo apt-get install python-cssselect
 		
-def graph_generator():
-	global rele_counter
-	global foto_counter
-	global video_counter
-	global logo_counter
-	global pdf_counter
-	global music_counter
-	global dog_counter
-	global jingle_counter
-	global graph_counter
+def send_graph(bot, update):
+	global comandi
+	global chiamate
 	
+	chiamate[comandi.index("graph")]+=1
+	bot.sendMessage(update.message.chat_id, "Genero la statistica dei comandi ricevuti finora...")
+
 	line_chart = pygal.HorizontalBar()
-	line_chart.title = 'Comandi TanzoBot usati dalle %s ore %s' % (time.strftime("%d/%m/%Y"),time.strftime("%H:%M:%S"))
-	line_chart.add('rele', rele_counter)
-	line_chart.add('foto', foto_counter)
-	line_chart.add('video', video_counter)
-	line_chart.add('logo', logo_counter)
-	line_chart.add('pdf', pdf_counter)
-	line_chart.add('music', music_counter)
-	line_chart.add('dog', dog_counter)
-	line_chart.add('jingle', jingle_counter)
-	line_chart.add('graph', jingle_counter)
+	line_chart.title = startup_time
+	line_chart.add('rele', chiamate[comandi.index("rele")])
+	line_chart.add('foto', chiamate[comandi.index("foto")])
+	line_chart.add('video', chiamate[comandi.index("video")])
+	line_chart.add('logo', chiamate[comandi.index("logo")])
+	line_chart.add('pdf', chiamate[comandi.index("pdf")])
+	line_chart.add('music', chiamate[comandi.index("music")])
+	line_chart.add('dog', chiamate[comandi.index("dog")])
+	line_chart.add('jingle', chiamate[comandi.index("jingle")])
+	line_chart.add('graph', chiamate[comandi.index("graph")])
 	line_chart.render_to_png('bar_chart.png')
 
-def send_graph(bot, update):
-	update_counter("graph")	
-	graph_generator()
 	bot.sendPhoto(update.message.chat_id,open('bar_chart.png'))
 
 #http://picamera.readthedocs.org/en/release-1.10/quickstart.html
-def send_video(bot, update):		
-	update_counter("video")
+def send_video(bot, update):	
+	global comandi
+	global chiamate
+		
+	chiamate[comandi.index("video")]+=1
 		
 	#os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video2.mp4")
-	bot.sendMessage(update.message.chat_id, "Video in corso...")
+	bot.sendMessage(update.message.chat_id, "Sto girando un video di 4 secondi, un momento prego...")
 	os.system("omxplayer -o local movie_camera_sound.mp3 &")
 	time.sleep(3.7)
 	with picamera.PiCamera() as camera:
@@ -153,9 +117,12 @@ def send_video(bot, update):
 
 #http://picamera.readthedocs.org/en/release-1.10/quickstart.html
 def send_foto(bot, update):
-	update_counter("foto")
+	global comandi
+	global chiamate
+
+	chiamate[comandi.index("foto")]+=1
 	
-	bot.sendMessage(update.message.chat_id, "Foto in corso...")
+	bot.sendMessage(update.message.chat_id, "Sto scattando la foto, un momento prego...")
 	os.system("omxplayer -o local saycheese.mp3 &")
 	time.sleep(2.5)
 	with picamera.PiCamera() as camera:
@@ -165,26 +132,48 @@ def send_foto(bot, update):
 	bot.sendPhoto(update.message.chat_id, photo=open('photo.jpg'))
 
 def send_logo(bot, update):
-	update_counter("logo")
+	global comandi
+	global chiamate
+	chiamate[comandi.index("logo")]+=1
+
+	bot.sendMessage(update.message.chat_id, "Sto scaricando il Logo di TanzoBot da Web, un momento prego...")			
 	bot.sendPhoto(update.message.chat_id, photo='http://www.acmesystems.it/www/tpc/telegram_bulb.jpg')
+	bot.sendMessage(update.message.chat_id, "http://www.acmesystems.it/tpc")			
 
 def send_pdf(bot, update):
-	update_counter("pdf")
+	global comandi
+	global chiamate
+
+	chiamate[comandi.index("pdf")]+=1
+	bot.sendMessage(update.message.chat_id, "Ti sto inviando un documento pdf, un momento prego...")			
 	bot.sendDocument(update.message.chat_id, open('acme.pdf'))
 
 def send_music(bot, update):
-	update_counter("music")
+	global comandi
+	global chiamate
+
+	chiamate[comandi.index("music")]+=1
+	bot.sendMessage(update.message.chat_id, "Ti sto inviando un file audio, un momento prego...")			
 	bot.sendAudio(update.message.chat_id, open("thats_all_folks.m4a"))
 
 def send_dog(bot, update):
-	update_counter("dog")
+	global comandi
+	global chiamate
+
+	chiamate[comandi.index("dog")]+=1
+	bot.sendMessage(update.message.chat_id, "Hai fatto abbaiare i cani :-)")			
 	os.system("omxplayer -o local angrydog.m4a &")
 
 def send_jingle(bot, update):
-	update_counter("jingle")
+	global comandi
+	global chiamate
+
+	chiamate[comandi.index("jingle")]+=1
+	bot.sendMessage(update.message.chat_id, "Hai fatto partire il Jingle Acme ! :-)")			
 	os.system("omxplayer -o local thats_all_folks.m4a &")
 
 def send_mute(bot, update):
+	bot.sendMessage(update.message.chat_id, "Hai messo in stop tutti i sound effects.")			
 	os.system("pkill omxplayer")
 
 def send_stop(bot, update):	
@@ -199,15 +188,11 @@ def any_message(bot, update):
 	# Save last chat_id to use in reply handler
 	global last_chat_id
 
-	print "any_message"
-
 	last_chat_id = update.message.chat_id
-
 	logger.info("New message\nFrom: %s\nchat_id: %d\nText: %s" %
 				(update.message.from_user,
 				 update.message.chat_id,
 				 update.message.text))
-
 
 def echo(bot, update):
 	global voice_file_counter
@@ -247,15 +232,19 @@ def echo(bot, update):
 
 	if update.message.text:
 		if update.message.text=="REL1 ON":
+			bot.sendMessage(update.message.chat_id, "Hai acceso il rele 1")
 			GPIO.output(REL1, 1)
 
 		if update.message.text=="REL1 OFF":
+			bot.sendMessage(update.message.chat_id, "Hai spento il rele 1")
 			GPIO.output(REL1, 0)
 
 		if update.message.text=="REL2 ON":
+			bot.sendMessage(update.message.chat_id, "Hai acceso il rele 2")			
 			GPIO.output(REL2, 1)
 
 		if update.message.text=="REL2 OFF":
+			bot.sendMessage(update.message.chat_id, "Hai spento il rele 2")			
 			GPIO.output(REL2, 0)
 
 		if update.message.text=="OK":
