@@ -1,23 +1,31 @@
 #!/usr/bin/env python
 #http://www.acmesystems.it/tpc
+#https://github.com/python-telegram-bot/python-telegram-bot#api
+
+# Sergio Tanzilli - sergio@tanzilli.com
  
 #Inserire nel file mytokens.py il token assegnato da BotFather
 import mytokens
 
-import telegram
+import telegram				#Wrapper Bot API Telegram
 import logging
 
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO		#Gestione GPIO
 import time
-import os
-import pygal
-
-import picamera
+import os					
+import pygal				# Creazione grafici
+import picamera				# Gestione picam
 
 # We use this var to save the last chat id, so we can reply to it
 last_chat_id = 0
 
+#Contatori usati per avere un buffer di 10 file per ogni 
+#messaggio 
+video_file_counter=0
+photo_file_counter=0
 voice_file_counter=0
+graph_file_counter=0
+
 update_queue = 0
 
 menu_keyboard = telegram.ReplyKeyboardMarkup([['/rele','/foto','/video','/logo','/start'],['/dog','/music','/jingle','/pdf','/graph'],['/mute','/menu']])
@@ -48,7 +56,9 @@ def switch_handler(channel):
 
 def pir_handler(channel):
 	global update_queue
+
 	print "PIR alarm"
+	print update_queue
 	update_queue.put("pir_alarm");
 
 def start(bot, update):
@@ -65,6 +75,63 @@ def send_menu_rele(bot, update):
 	chiamate[comandi.index("rele")]+=1
 	bot.sendMessage(update.message.chat_id, text="Puoi accendere o spegnere entrambe i rele collegati a TanzoBot...", reply_markup=rele_keyboard)
 
+#Pacchetti da installare per poter utilizzare la picam
+#sudo apt-get install python-picamera
+
+#Doc API
+#http://picamera.readthedocs.org/en/release-1.10/quickstart.html
+
+def send_video(bot, update):	
+	global comandi
+	global chiamate
+	global video_file_counter
+		
+	chiamate[comandi.index("video")]+=1
+
+	video_file_counter=video_file_counter+1		
+	if video_file_counter==10:
+		video_file_counter=1
+
+	os.system("rm video%d.mp4" % video_file_counter)	
+	os.system("rm video%d.h264" % video_file_counter)	
+
+	bot.sendMessage(update.message.chat_id, "Sto girando un video di 4 secondi, un momento prego...")
+	os.system("omxplayer -o local movie_camera_sound.mp3 &")
+	time.sleep(3.7)
+	with picamera.PiCamera() as camera:
+		camera.resolution = (320,240)
+		camera.start_recording('video%d.h264' % video_file_counter)
+		camera.wait_recording(4)
+		camera.stop_recording()
+
+	os.system("MP4Box -add video%d.h264 video%d.mp4" %(video_file_counter,video_file_counter))
+	bot.sendVideo(update.message.chat_id, video=open('video%d.mp4' % video_file_counter))
+
+#http://picamera.readthedocs.org/en/release-1.10/quickstart.html
+def send_photo(bot, update):
+	global comandi
+	global chiamate
+	global photo_file_counter
+
+	chiamate[comandi.index("foto")]+=1
+
+	photo_file_counter=photo_file_counter+1		
+	if photo_file_counter==10:
+		photo_file_counter=1
+
+	os.system("rm photo%d.jpg" % photo_file_counter)	
+	
+	bot.sendMessage(update.message.chat_id, "Sto scattando la foto, un momento prego...")
+	os.system("omxplayer -o local saycheese.mp3 &")
+	time.sleep(2.5)
+	with picamera.PiCamera() as camera:
+		camera.resolution = (1280,720)
+		camera.capture('photo%d.jpg' % photo_file_counter)
+
+	bot.sendPhoto(update.message.chat_id, photo=open('photo%d.jpg' % photo_file_counter))
+
+#Pacchetti da installare per poter generare grafici
+
 #sudo apt-get install python-pip
 #sudo pip install pygal
 #sudo pip install tinycss
@@ -75,8 +142,16 @@ def send_menu_rele(bot, update):
 def send_graph(bot, update):
 	global comandi
 	global chiamate
+	global graph_file_counter
 	
 	chiamate[comandi.index("graph")]+=1
+	
+	graph_file_counter=graph_file_counter+1		
+	if graph_file_counter==10:
+		graph_file_counter=1
+
+	os.system("rm graph%d.png" % graph_file_counter)	
+	
 	bot.sendMessage(update.message.chat_id, "Genero la statistica dei comandi ricevuti finora...")
 
 	line_chart = pygal.HorizontalBar()
@@ -90,50 +165,15 @@ def send_graph(bot, update):
 	line_chart.add('dog', chiamate[comandi.index("dog")])
 	line_chart.add('jingle', chiamate[comandi.index("jingle")])
 	line_chart.add('graph', chiamate[comandi.index("graph")])
-	line_chart.render_to_png('bar_chart.png')
+	line_chart.render_to_png('graph%d.png' % graph_file_counter)
 
-	bot.sendPhoto(update.message.chat_id,open('bar_chart.png'))
+	bot.sendPhoto(update.message.chat_id,open('graph%d.png' % graph_file_counter))
 
-#http://picamera.readthedocs.org/en/release-1.10/quickstart.html
-def send_video(bot, update):	
-	global comandi
-	global chiamate
-		
-	chiamate[comandi.index("video")]+=1
-		
-	#os.system("avconv -t 10 -y -f video4linux2 -i /dev/video0 video2.mp4")
-	bot.sendMessage(update.message.chat_id, "Sto girando un video di 4 secondi, un momento prego...")
-	os.system("omxplayer -o local movie_camera_sound.mp3 &")
-	time.sleep(3.7)
-	with picamera.PiCamera() as camera:
-		camera.resolution = (320,240)
-		camera.start_recording('video.h264')
-		camera.wait_recording(4)
-		camera.stop_recording()
-
-	os.system("rm video.mp4")	
-	os.system("MP4Box -add video.h264 video.mp4")
-	bot.sendVideo(update.message.chat_id, video=open('video.mp4'))
-
-#http://picamera.readthedocs.org/en/release-1.10/quickstart.html
-def send_foto(bot, update):
-	global comandi
-	global chiamate
-
-	chiamate[comandi.index("foto")]+=1
-	
-	bot.sendMessage(update.message.chat_id, "Sto scattando la foto, un momento prego...")
-	os.system("omxplayer -o local saycheese.mp3 &")
-	time.sleep(2.5)
-	with picamera.PiCamera() as camera:
-		camera.resolution = (1280,720)
-		camera.capture('photo.jpg')
-
-	bot.sendPhoto(update.message.chat_id, photo=open('photo.jpg'))
 
 def send_logo(bot, update):
 	global comandi
 	global chiamate
+	
 	chiamate[comandi.index("logo")]+=1
 
 	bot.sendMessage(update.message.chat_id, "Sto scaricando il Logo di TanzoBot da Web, un momento prego...")			
@@ -200,16 +240,14 @@ def echo(bot, update):
 	print "----> Mittente: : [" + update.message.from_user.username + "]"
 	print "      Testo     : [" + update.message.text + "]"
 	
-	#print update.message
-	
 	if update.message.voice:
 		print " ----> VOCE <----"
-		#bot.sendVoice(update.message.chat_id, update.message.voice.file_id)
-		#https://github.com/python-telegram-bot/python-telegram-bot#api
 				
 		voice_file_counter=voice_file_counter+1		
 		if voice_file_counter==10:
 			voice_file_counter=1
+
+		os.system("rm voice%d" % voice_file_counter)	
 
 		newFile = bot.getFile(update.message.voice.file_id)
 		newFile.download('voice%d' % voice_file_counter )
@@ -271,7 +309,7 @@ def main():
 	dp.addTelegramCommandHandler("menu", menu)
 	dp.addTelegramCommandHandler("help", menu)
 	dp.addTelegramCommandHandler("rele", send_menu_rele)
-	dp.addTelegramCommandHandler("foto", send_foto)
+	dp.addTelegramCommandHandler("foto", send_photo)
 	dp.addTelegramCommandHandler("video", send_video)
 	dp.addTelegramCommandHandler("logo", send_logo)
 	dp.addTelegramCommandHandler("pdf", send_pdf)
@@ -294,7 +332,7 @@ def main():
 	dp.addErrorHandler(error)
 
 	# Start the Bot
-	update_queue = updater.start_polling(poll_interval=0.1, timeout=10)
+	update_queue = updater.start_polling()
 
 	try:  
 		# Run the bot until the you presses Ctrl-C or the process receives SIGINT,
