@@ -19,6 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def messaggi_in_arrivo(bot, update):
+	#Prima di elaborare un messaggio controlla che tipo di utente e':
 	user_type= check.user(bot,update)
 	
 	if user_type=="none":
@@ -34,6 +35,7 @@ def messaggi_in_arrivo(bot, update):
 		return
 
 def comando_start(bot, update):	
+	#Prima di elaborare un comando controlla che tipo di utente e':
 	user_type= check.user(bot,update)
 	
 	if user_type=="none":
@@ -41,11 +43,11 @@ def comando_start(bot, update):
 		return
 
 	if user_type=="user":
-		bot.sendMessage(update.message.chat_id, "User\n%s" % help_text )
+		bot.sendMessage(update.message.chat_id, "User: %s" % help_text )
 		return
 
 	if user_type=="su":
-		bot.sendMessage(update.message.chat_id, "Super user\n%s" % help_text)
+		bot.sendMessage(update.message.chat_id, "Super user: %s" % help_text)
 		return
 
 updater = Updater(token='415378027:AAGKpq8P6hggT8oAqoWJ6Y_qcXoXJ2Zn96w')
