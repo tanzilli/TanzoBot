@@ -1,4 +1,4 @@
-#Telegram Physical Computing
+#Physical computing with Telegram
 
 Info su http://www.acmesystems.it/tpc
 
