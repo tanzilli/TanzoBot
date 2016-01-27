@@ -53,8 +53,9 @@ def comando_start(bot, update):
 	if user_type=="su":
 		bot.sendMessage(update.message.chat_id, "Super user: [%s]" % update.message.from_user.username)
 		return
-
-updater = Updater(token='415378027:AAGKpq8P6hggT8oAqoWJ6Y_qcXoXJ2Zn96w')
+		
+## Attenzione inserire qui il Token assegnato da Telegram
+updater = Updater(token='145378027:AAGKpq8P6hggT8oAqoWJ6Y_qcXoXJ2Zn96w')
 dispatcher = updater.dispatcher
 dispatcher.addTelegramMessageHandler(messaggi_in_arrivo)
 dispatcher.addTelegramCommandHandler("start",comando_start)
