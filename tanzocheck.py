@@ -15,7 +15,7 @@ class Check():
 	otp=-1
 
 	def __init__(self):
-		print "TanzoCheck 0.3 is fired..."
+		print "TanzoCheck 0.4 is fired..."
 		if os.path.exists(self.user_file):
 			with open(self.user_file) as json_file:
 				json_data=json.load(json_file)
@@ -87,6 +87,23 @@ class Check():
 			print "Comando non autorizzato"
 		
 
+	def cmd_userlist(self,bot, update):
+		if self.user(bot,update)!="su":
+			print "Accesso non autorizzato"
+			return
+
+		outlist=""
+		for i in range (0,len(self.user_ids)):
+			outlist+="%d) %s, %s " %  (i+1,self.user_first_names[i],self.user_last_names[i])
+			
+			if len(self.user_usernames[i])>0:
+				outlist+="[@%s]" % self.user_usernames[i]
+			else:	
+				outlist+="[nousername]"
+			outlist+="\n"
+
+		bot.sendMessage(update.message.chat_id, outlist )
+
 	def cmd_userdel(self,bot, update):
 		if self.user(bot,update)!="su":
 			print "Accesso non autorizzato"
@@ -104,5 +121,6 @@ class Check():
 		
 	def addTanzoCheckCommandHandler(self,dispatcher):
 		dispatcher.addTelegramCommandHandler("otp",self.cmd_otp)
+		dispatcher.addTelegramCommandHandler("userlist",self.cmd_userlist)
 		dispatcher.addTelegramCommandHandler("userdel",self.cmd_userdel)
 
