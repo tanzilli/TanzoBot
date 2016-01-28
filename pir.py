@@ -45,7 +45,7 @@ def start(bot, update):
 	global chat_ids
 
 	chat_ids+=[update.message.chat_id]	
-	bot.sendMessage(update.message.chat_id, "Ciao %s ! Io sono PirBot.\n" % ( update.message.from_user.first_name))
+	bot.sendMessage(update.message.chat_id, "Ciao %s ! Io sono InfraredBot.\n" % ( update.message.from_user.first_name))
 		
 def error(bot, update, error):
 	logger.warn('Update "%s" caused error "%s"' % (update, error))
