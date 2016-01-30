@@ -10,7 +10,7 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
-__version__ = 'v0.0.1'
+__version__ = 'v0.0.2'
 
 import os.path
 import platform
@@ -21,6 +21,7 @@ import thread
 import threading
 import select
 import math
+import time
 
 if platform.platform().find("Linux-2")!=-1:
 	legacy_id=True
@@ -486,18 +487,34 @@ mcuName2pinname = {
     }
 }
 
+#Wrapper functions raspberry-gpio-python compatibility
+#http://sourceforge.net/p/raspberry-gpio-python/wiki/BasicUsage/
+
+#Note that just some function are implemented
+#Replace "import RPi.GPIO as GPIO" with "import acmepins as GPIO"
+
 BOARD = 0
 BCM = 0
 OUT = "out"
-IN = "inp"
+IN = "in"
 HIGH=1
 LOW=0
-
+RISING='rising'
+FALLING='falling'
+BOTH='both'
+PUD_UP='none'
+PUD_DOWN='none'
 
 def setmode(mode):
 	return 0
 
-def setup(pin,mode):
+def setwarnings(mode):
+	return 0
+
+def cleanup():
+	pass
+
+def setup(pin,mode,pull_up_down=0):
 	kernel_id=pinname2kernelid(pin)
 	export(kernel_id)
 	direction(kernel_id,mode)
@@ -525,7 +542,41 @@ def input(pin):
 
 def getVersion ():
 	return __version__
+			
+def add_event_detect(pin, value, callback, debouncingtime):
+	iopath=get_gpio_path(pinname2kernelid(pin))
+	if os.path.exists(iopath): 
+		fd = open(iopath + '/value','w')
+		fd.write(str(value))
+	else:
+		return
 
+	kernel_id=pinname2kernelid(pin)
+	if fd!=None:
+		set_edge(kernel_id,value)
+		thread.start_new_thread(wait_edge,(fd,pin,callback,debouncingtime))
+		return
+	else:		
+		thread.exit()
+
+	fd.close()
+			
+
+#End of RPi.GPIO wrapper functions 
+
+def wait_edge(fd,pin,callback,debouncingtime):
+	debouncingtime=debouncingtime/1000
+	timestampprec=time.time()
+	counter=0
+	po = select.epoll()
+	po.register(fd,select.EPOLLET)
+	while True:
+		events = po.poll()
+		timestamp=time.time()
+		if (timestamp-timestampprec>debouncingtime) and counter>0:
+			callback(pin)
+		counter=counter+1
+		timestampprec=timestamp
 
 def get_gpio_path(kernel_id):
 	global legacy_id
@@ -577,11 +628,11 @@ def unexport(kernel_id):
 			f.write(str(kernel_id-32))
 		f.close()
 
-def direction(kernel_id,direct):
+def direction(kernel_id,direction):
 	iopath=get_gpio_path(kernel_id)
 	if os.path.exists(iopath): 
 		f = open(iopath + '/direction','w')
-		f.write(direct)
+		f.write(direction)
 		f.close()
 
 def set_value(kernel_id,value):
@@ -667,29 +718,6 @@ def pinname2kernelid(pinname):
 		return offset+int(pinname[2:4])
 	else:	
 		return pin2kid[pinname]
-
-def readU8(bus,address,reg):
-  result = bus.read_byte_data(address, reg)
-  return result
-
-def readS8(bus,address,reg):
-	result = bus.read_byte_data(address, reg)
-	if result > 127: 
-		result -= 256
-	return result
-
-def readS16(bus,address,register):
-	hi = readS8(bus,address,register)
-	lo = readU8(bus,address,register+1)
-	return (hi << 8) + lo
-
-def readU16(bus,address,register):
-	hi = readU8(bus,address,register)
-	lo = readU8(bus,address,register+1)
-	return (hi << 8) + lo
-
-def write8(bus,address,reg,value):
-	bus.write_byte_data(address,reg,value)
 
 class GPIO():
 	kernel_id=None
