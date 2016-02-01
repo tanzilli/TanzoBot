@@ -25,6 +25,8 @@ video_file_counter=0
 photo_file_counter=0
 voice_file_counter=0
 graph_file_counter=0
+audio_file_counter=0
+video_in_file_counter=0
 
 update_queue = 0
 
@@ -92,8 +94,8 @@ def send_video(bot, update):
 	if video_file_counter==10:
 		video_file_counter=1
 
-	os.system("rm video%d.mp4" % video_file_counter)	
-	os.system("rm video%d.h264" % video_file_counter)	
+	os.system("rm -f video%d.mp4" % video_file_counter)	
+	os.system("rm -f video%d.h264" % video_file_counter)	
 
 	bot.sendMessage(update.message.chat_id, "Sto girando un video di 4 secondi, un momento prego...")
 	os.system("omxplayer -o local movie_camera_sound.mp3 &")
@@ -150,7 +152,7 @@ def send_graph(bot, update):
 	if graph_file_counter==10:
 		graph_file_counter=1
 
-	os.system("rm graph%d.png" % graph_file_counter)	
+	os.system("rm -f graph%d.png" % graph_file_counter)	
 	
 	bot.sendMessage(update.message.chat_id, "Genero la statistica dei comandi ricevuti finora...")
 
@@ -247,23 +249,39 @@ def echo(bot, update):
 		if voice_file_counter==10:
 			voice_file_counter=1
 
-		os.system("rm voice%d" % voice_file_counter)	
+		os.system("rm -f voice%d" % voice_file_counter)	
 
 		newFile = bot.getFile(update.message.voice.file_id)
 		newFile.download('voice%d' % voice_file_counter )
 		os.system("omxplayer -o local voice%d &" % voice_file_counter)
 
 	if update.message.audio:
+		global audio_file_counter
+
+		audio_file_counter=audio_file_counter+1		
+		if audio_file_counter==10:
+			audio_file_counter=1
+
+		os.system("rm -f audio%d" % voice_file_counter)	
+
 		print " ----> AUDIO <----"
 		newFile = bot.getFile(update.message.audio.file_id)
-		newFile.download('audio')
-		os.system("omxplayer -o local audio &")
+		newFile.download('audio%d' % audio_file_counter)
+		os.system("omxplayer -o local audio%d &" % audio_file_counter)
 
 	if update.message.video:
+		global video_in_file_counter
+
+		video_in_file_counter=video_in_file_counter+1		
+		if video_in_file_counter==10:
+			video_in_file_counter=1
+
+		os.system("rm -f video%d" % video_in_file_counter)	
+
 		print " ----> VIDEO <----"
 		newFile = bot.getFile(update.message.video.file_id)
-		newFile.download('video')
-		os.system("omxplayer -o local video &")
+		newFile.download('video_in%d' % video_in_file_counter)
+		os.system("omxplayer -o local video_in%d &" % video_in_file_counter)
 		
 	if update.message.sticker:
 		print " ----> STICKER <----"
