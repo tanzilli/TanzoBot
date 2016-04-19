@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-#http://www.acmesystems.it/tpc
+#http://www.tanzilli.com/insegna_bot
 #https://github.com/python-telegram-bot/python-telegram-bot#api
 
 # Sergio Tanzilli - sergio@tanzilli.com
  
 import telegram.ext
 import logging
+import mytokens
 
 import time
 import os					
@@ -49,6 +50,14 @@ def echo(bot, update):
 	print "----> Mittente: : [" + update.message.from_user.username + "]"
 	print "      Testo     : [" + update.message.text + "]"
  
+	print update.message
+ 
+	if update.message.document:
+		newFile = bot.getFile(update.message.document.file_id)
+		newFile.download("newvideo.mov")
+		bot.sendMessage(update.message.chat_id, text="Salva come VIDEO x ...", reply_markup=video_keyboard)
+		current_command="save"
+
 	if update.message.video:
 		newFile = bot.getFile(update.message.video.file_id)
 		newFile.download("newvideo.mov")
@@ -78,28 +87,28 @@ def echo(bot, update):
 			if update.message.text=="VIDEO1":
 				if os.path.exists("video1.mov"):
 					os.system("sudo pkill omxplayer")
-					os.system("omxplayer --win 0,0,128,64 --orientation 0 -o local --loop video1.mov &")
+					os.system("omxplayer --win 0,0,128,64 --orientation 270 -o local --loop video1.mov &")
 				else:
 					bot.sendMessage(update.message.chat_id, "Il video non esiste")
 							
 			if update.message.text=="VIDEO2":
 				if os.path.exists("video2.mov"):
 					os.system("sudo pkill omxplayer")
-					os.system("omxplayer --win 0,0,128,64 --orientation 0 -o local --loop video2.mov &")
+					os.system("omxplayer --win 0,0,128,64 --orientation 270 -o local --loop video2.mov &")
 				else:
 					bot.sendMessage(update.message.chat_id, "Il video non esiste")
 
 			if update.message.text=="VIDEO3":
 				if os.path.exists("video3.mov"):
 					os.system("sudo pkill omxplayer")
-					os.system("omxplayer --win 0,0,128,64 --orientation 0 -o local --loop video3.mov &")
+					os.system("omxplayer --win 0,0,128,64 --orientation 270 -o local --loop video3.mov &")
 				else:
 					bot.sendMessage(update.message.chat_id, "Il video non esiste")
 
 			if update.message.text=="VIDEO4":
 				if os.path.exists("video4.mov"):
 					os.system("sudo pkill omxplayer")
-					os.system("omxplayer --win 0,0,128,64 --orientation 0 -o local --loop video4.mov &")
+					os.system("omxplayer --win 0,0,128,64 --orientation 270 -o local --loop video4.mov &")
 				else:
 					bot.sendMessage(update.message.chat_id, "Il video non esiste")
 
