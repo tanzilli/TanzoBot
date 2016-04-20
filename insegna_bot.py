@@ -114,8 +114,6 @@ def echo(bot, update):
 
 		if update.message.text=="STOP":
 			os.system("sudo pkill omxplayer")
-			screen.fill((0,0,0))
-			pygame.display.update()
 			
 def error(bot, update, error):
 	logger.warn('Update "%s" caused error "%s"' % (update, error))
